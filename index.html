@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カノンで音楽づくり (Waon no Sete Style)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        ::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen text-slate-800 flex flex-col select-none">
+
+    <header class="bg-white/80 backdrop-blur-md border-b border-indigo-100 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent">カノンで音楽づくり</h1>
+                    <p class="text-xs text-slate-500">カノン進行（2拍ごと2コード×4小節＝1ループ / 1小節8分割）で楽しむ作曲アプリ</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+                <button id="play-btn" class="flex items-center space-x-1 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold shadow-md transition transform active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    <span id="play-text">再生</span>
+                </button>
+                <button id="stop-btn" class="flex items-center space-x-1 bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold shadow-md transition transform active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd" />
+                    </svg>
+                    <span>停止</span>
+                </button>
+                <button id="score-btn" class="flex items-center space-x-1 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl font-medium text-sm shadow-sm transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span>五線譜を表示</span>
+                </button>
+                <button id="share-btn" class="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl font-medium text-sm shadow-sm transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    <span>保存/共有</span>
+                </button>
+                <button id="clear-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-xl font-medium text-sm transition">
+                    すべて消去
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col gap-4">
+        <!-- Controls & Options Bar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-indigo-50 p-4 flex flex-wrap gap-4 items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <label for="bpm-slider" class="text-xs font-bold text-slate-600">テンポ (BPM):</label>
+                    <input id="bpm-slider" type="range" min="60" max="140" value="100" class="w-28 accent-indigo-600">
+                    <span id="bpm-val" class="text-xs font-mono font-bold text-indigo-600 w-8">100</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="synth-type" class="text-xs font-bold text-slate-600">音色:</label>
+                    <select id="synth-type" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs rounded-xl px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="triangle">トライアングル (やわらかい)</option>
+                        <option value="sine">サイン波 (きれい)</option>
+                        <option value="square">スクエア (ファミコン風)</option>
+                        <option value="sawtooth">ソートゥース (きらびやか)</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-1.5 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200">
+                    <span class="text-xs font-bold text-slate-600">小節数:</span>
+                    <button id="remove-measure-btn" class="bg-white hover:bg-slate-200 text-slate-700 w-6 h-6 rounded-lg font-bold text-sm shadow-sm flex items-center justify-center transition" title="4小節減らす">-</button>
+                    <span id="measure-count-val" class="text-xs font-mono font-bold text-indigo-600 px-1">4小節</span>
+                    <button id="add-measure-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white w-6 h-6 rounded-lg font-bold text-sm shadow-sm flex items-center justify-center transition" title="4小節増やす（カノン進行リピート）">+</button>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <label class="flex items-center space-x-2 cursor-pointer bg-indigo-50/60 px-3 py-1.5 rounded-xl border border-indigo-100">
+                    <input id="chord-mute-toggle" type="checkbox" checked class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                    <span class="text-xs font-bold text-indigo-900">コード伴奏を鳴らす</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Sheet Music Modal -->
+        <div id="score-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-4xl w-full max-h-[90vh] shadow-2xl border border-indigo-50 flex flex-col gap-4 overflow-hidden">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-purple-600 text-white p-2 rounded-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">カノン進行 楽譜ビュー (ト音記号)</h3>
+                            <p id="score-modal-subtitle" class="text-xs text-slate-500">あなたの作成した旋律の五線譜（4小節）</p>
+                        </div>
+                    </div>
+                    <button id="close-score-modal" class="text-slate-400 hover:text-slate-600 font-bold text-2xl px-2">&times;</button>
+                </div>
+
+                <div class="overflow-y-auto flex-1 p-2 bg-slate-50/50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center" id="score-canvas-container">
+                    <canvas id="score-canvas" width="800" height="500" class="bg-white rounded-xl shadow-sm border border-slate-200 max-w-full h-auto"></canvas>
+                </div>
+
+                <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <span class="text-xs text-slate-500">※ 4分の4拍子・カノン進行 (C - G - Am - Em - F - C - F - G)</span>
+                    <button id="print-score-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm">画像として保存 / 印刷</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Modal -->
+        <div id="share-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+            <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl border border-indigo-50 flex flex-col gap-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800">曲の保存と共有</h3>
+                    <button id="close-modal" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+                </div>
+                <p class="text-xs text-slate-600">以下の共有リンクをコピーするか、曲データコードを保存しておくと、いつでも同じ状態から再開できます。</p>
+                
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-500">共有リンク（ブラウザのアドレスバー用）</label>
+                    <div class="flex items-center gap-2">
+                        <input id="share-url-input" type="text" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600 focus:outline-none">
+                        <button id="copy-url-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap">コピー</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-500">曲データコード（テキストで保存用）</label>
+                    <textarea id="share-code-input" rows="3" class="w-full bg-slate-100 border border-slate-200 rounded-xl p-2 text-xs font-mono text-slate-600 focus:outline-none"></textarea>
+                    <div class="flex justify-between items-center">
+                        <button id="copy-code-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition">コードをコピー</button>
+                        <button id="load-code-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">コードを読み込む</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sequencer Grid Container -->
+        <div class="bg-white rounded-2xl shadow-sm border border-indigo-50 p-4 overflow-x-auto flex-1 flex flex-col">
+            <div class="flex flex-col flex-1" id="grid-container" style="min-width: 950px;">
+                <!-- Header Measures Row -->
+                <div id="measures-header" class="grid border-b-2 border-slate-200 pb-2 mb-2 font-bold text-center text-sm text-slate-600">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Sub-beat Markers Row (8 subdivisions per measure) -->
+                <div class="grid text-[10px] text-slate-400 text-center mb-1 font-semibold" id="sub-beat-header">
+                    <div class="text-left px-2">分割 (1〜8)</div>
+                </div>
+
+                <!-- Note Rows Container -->
+                <div id="note-rows" class="flex flex-col gap-1.5 flex-1">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Message Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg text-sm transition-all duration-300 transform translate-y-20 opacity-0 z-50">
+        コピーしました！
+    </div>
+
+    <script>
+        let totalMeasures = 4;
+        const STEPS_PER_MEASURE = 8;
+        const STEPS_PER_CHORD = 4;
+
+        function getTotalSteps() {
+            return totalMeasures * STEPS_PER_MEASURE;
+        }
+
+        let isPlaying = false;
+        let currentStep = 0;
+        let isMouseDown = false;
+        let dragTargetNoteIdx = null;
+        let dragStartStep = null;
+        let melodySynth = null;
+        let chordSynth = null;
+
+        const BASE_CHORDS = [
+            { name: "C", notes: ["C", "E", "G"], chordPitches: ["C3", "E3", "G3", "C4"] },
+            { name: "G", notes: ["G", "B", "D"], chordPitches: ["G2", "D3", "G3", "B3"] },
+            { name: "Am", notes: ["A", "C", "E"], chordPitches: ["A2", "E3", "A3", "C4"] },
+            { name: "Em", notes: ["E", "G", "B"], chordPitches: ["E2", "B3", "E3", "G3"] },
+            { name: "F", notes: ["F", "A", "C"], chordPitches: ["F2", "C3", "F3", "A3"] },
+            { name: "C", notes: ["C", "E", "G"], chordPitches: ["C3", "E3", "G3", "C4"] },
+            { name: "F", notes: ["F", "A", "C"], chordPitches: ["F2", "C3", "F3", "A3"] },
+            { name: "G", notes: ["G", "B", "D"], chordPitches: ["G2", "D3", "G3", "B3"] }
+        ];
+
+        function getChordAt(chordIdx) {
+            return BASE_CHORDS[chordIdx % BASE_CHORDS.length];
+        }
+
+        const NOTE_MAPPING = [
+            { note: "E5", label: "高いミ", staffY: 3 },
+            { note: "D5", label: "高いレ", staffY: 9 },
+            { note: "C5", label: "高いド", staffY: 15 },
+            { note: "B4", label: "シ", staffY: 22 },
+            { note: "A4", label: "ラ", staffY: 29 },
+            { note: "G4", label: "ソ", staffY: 36 },
+            { note: "F4", label: "ファ", staffY: 43 },
+            { note: "E4", label: "ミ", staffY: 50 },
+            { note: "D4", label: "レ", staffY: 57 },
+            { note: "C4", label: "ド", staffY: 64 }
+        ].map(item => ({
+            note: item.note,
+            label: item.label,
+            root: item.note.charAt(0),
+            staffY: item.staffY
+        }));
+
+        let gridData = Array(totalMeasures).fill(null).map(() => 
+            Array(NOTE_MAPPING.length).fill(null).map(() => Array(STEPS_PER_MEASURE).fill(null))
+        );
+
+        function addMeasures(count = 4) {
+            if (isPlaying) stopPlayback();
+            for (let i = 0; i < count; i++) {
+                gridData.push(
+                    Array(NOTE_MAPPING.length).fill(null).map(() => Array(STEPS_PER_MEASURE).fill(null))
+                );
+            }
+            totalMeasures += count;
+            updateMeasureUI();
+            showToast(`${count}小節追加しました（現在 ${totalMeasures}小節）`);
+        }
+
+        function removeMeasures(count = 4) {
+            if (totalMeasures <= 4) {
+                showToast("最小は4小節です");
+                return;
+            }
+            if (isPlaying) stopPlayback();
+            gridData.splice(totalMeasures - count, count);
+            totalMeasures -= count;
+            updateMeasureUI();
+            showToast(`${count}小節削除しました（現在 ${totalMeasures}小節）`);
+        }
+
+        function updateMeasureUI() {
+            document.getElementById('measure-count-val').textContent = `${totalMeasures}小節`;
+            const gridContainer = document.getElementById('grid-container');
+            gridContainer.style.minWidth = `${Math.max(950, 110 + totalMeasures * 210)}px`;
+            buildMeasuresHeader();
+            buildSubBeatHeader();
+            buildGrid();
+        }
+
+        function findNoteAtCell(measureIdx, noteIdx, stepInMeasure) {
+            for (let s = stepInMeasure; s >= 0; s--) {
+                const noteObj = gridData[measureIdx][noteIdx][s];
+                if (noteObj && noteObj.startStepInMeasure <= stepInMeasure && (noteObj.startStepInMeasure + noteObj.length) > stepInMeasure) {
+                    return noteObj;
+                }
+            }
+            return null;
+        }
+
+        function setNoteSpan(measureIdx, noteIdx, startStepInMeasure, length) {
+            const noteObj = { startStepInMeasure, length };
+            for (let s = startStepInMeasure; s < startStepInMeasure + length && s < STEPS_PER_MEASURE; s++) {
+                gridData[measureIdx][noteIdx][s] = noteObj;
+            }
+        }
+
+        function clearNoteSpan(measureIdx, noteIdx, startStepInMeasure) {
+            const noteObj = gridData[measureIdx][noteIdx][startStepInMeasure];
+            if (!noteObj) return;
+            const len = noteObj.length;
+            for (let s = startStepInMeasure; s < startStepInMeasure + len && s < STEPS_PER_MEASURE; s++) {
+                gridData[measureIdx][noteIdx][s] = null;
+            }
+        }
+
+        function startDrag(noteIdx, globalStep) {
+            isMouseDown = true;
+            dragTargetNoteIdx = noteIdx;
+            dragStartStep = globalStep;
+
+            const measureIdx = Math.floor(globalStep / STEPS_PER_MEASURE);
+            const stepInMeasure = globalStep % STEPS_PER_MEASURE;
+
+            const existingNote = findNoteAtCell(measureIdx, noteIdx, stepInMeasure);
+            if (existingNote) {
+                clearNoteSpan(measureIdx, noteIdx, existingNote.startStepInMeasure);
+            } else {
+                if (Tone.context.state === 'running' && melodySynth) {
+                    melodySynth.triggerAttackRelease(NOTE_MAPPING[noteIdx].note, "8n");
+                }
+                setNoteSpan(measureIdx, noteIdx, stepInMeasure, 1);
+            }
+            renderGridState();
+        }
+
+        function continueDrag(noteIdx, globalStep) {
+            if (!isMouseDown || dragTargetNoteIdx !== noteIdx) return;
+
+            const startMeasure = Math.floor(dragStartStep / STEPS_PER_MEASURE);
+            const currentMeasure = Math.floor(globalStep / STEPS_PER_MEASURE);
+
+            if (startMeasure !== currentMeasure) return;
+
+            const step1 = dragStartStep % STEPS_PER_MEASURE;
+            const step2 = globalStep % STEPS_PER_MEASURE;
+
+            const start = Math.min(step1, step2);
+            const end = Math.max(step1, step2);
+            const length = end - start + 1;
+
+            for (let s = start; s <= end; s++) {
+                const overlapping = findNoteAtCell(startMeasure, noteIdx, s);
+                if (overlapping) {
+                    clearNoteSpan(startMeasure, noteIdx, overlapping.startStepInMeasure);
+                }
+            }
+
+            setNoteSpan(startMeasure, noteIdx, start, length);
+            renderGridState();
+        }
+
+        function endDrag() {
+            isMouseDown = false;
+            dragTargetNoteIdx = null;
+            dragStartStep = null;
+        }
+
+        function isCellInsideNote(globalStep, noteIdx) {
+            const m = Math.floor(globalStep / STEPS_PER_MEASURE);
+            const s = globalStep % STEPS_PER_MEASURE;
+            for (let checkS = s; checkS >= 0; checkS--) {
+                const noteObj = gridData[m][noteIdx][checkS];
+                if (noteObj && noteObj.startStepInMeasure <= s && (noteObj.startStepInMeasure + noteObj.length) > s) {
+                    return noteObj;
+                }
+            }
+            return null;
+        }
+
+        function renderGridState() {
+            const container = document.getElementById('note-rows');
+            if (!container || container.children.length === 0) return;
+            const rows = container.children;
+            const totalSteps = getTotalSteps();
+
+            for (let noteIdx = 0; noteIdx < NOTE_MAPPING.length; noteIdx++) {
+                const rowCells = rows[noteIdx].children;
+                for (let step = 0; step < totalSteps; step++) {
+                    const cellEl = rowCells[step + 1];
+                    const m = Math.floor(step / STEPS_PER_MEASURE);
+                    const s = step % STEPS_PER_MEASURE;
+                    const chordIdx = Math.floor(step / STEPS_PER_CHORD);
+                    const isChordTone = getChordAt(chordIdx).notes.includes(NOTE_MAPPING[noteIdx].root);
+
+                    const activeSpan = isCellInsideNote(step, noteIdx);
+
+                    cellEl.className = `h-9 border rounded-md transition-all cursor-pointer flex items-center justify-center relative select-none`;
+                    cellEl.innerHTML = '';
+
+                    if (activeSpan) {
+                        if (activeSpan.startStepInMeasure === s) {
+                            cellEl.classList.add('bg-indigo-600', 'border-indigo-700', 'shadow-sm', 'z-10');
+                            const len = activeSpan.length;
+                            let durationLabel = '';
+                            if (len === 1) durationLabel = '♪';
+                            else if (len === 2) durationLabel = '♩';
+                            else if (len === 3) durationLabel = '♩.';
+                            else if (len === 4) durationLabel = '𝅗𝅥';
+                            else if (len >= 8) durationLabel = '𝅝';
+
+                            cellEl.innerHTML = `<span class="text-white text-xs font-bold pointer-events-none">${durationLabel}</span>`;
+                            
+                            if (len > 1) {
+                                cellEl.style.borderTopRightRadius = '0';
+                                cellEl.style.borderBottomRightRadius = '0';
+                            }
+                        } else {
+                            cellEl.classList.add('bg-indigo-500', 'border-indigo-600', 'z-10');
+                            if (s === activeSpan.startStepInMeasure + activeSpan.length - 1) {
+                                cellEl.style.borderTopLeftRadius = '0';
+                                cellEl.style.borderBottomLeftRadius = '0';
+                            } else {
+                                cellEl.style.borderRadius = '0';
+                            }
+                        }
+                    } else {
+                        if (isChordTone) {
+                            cellEl.classList.add('bg-indigo-50/80', 'border-indigo-200', 'hover:bg-indigo-100');
+                        } else {
+                            cellEl.classList.add('bg-slate-50/60', 'border-slate-200', 'hover:bg-slate-100');
+                        }
+                    }
+
+                    if (isPlaying && currentStep === step) {
+                        cellEl.classList.add('ring-2', 'ring-pink-500', 'ring-offset-1');
+                    }
+                }
+            }
+        }
+
+        function initSynths() {
+            if (melodySynth) melodySynth.dispose();
+            if (chordSynth) chordSynth.dispose();
+
+            const type = document.getElementById('synth-type') ? document.getElementById('synth-type').value : 'triangle';
+
+            // メロディが同時に複数重なっても全て鳴るようにPolySynth（最大10音同時発音）を使用
+            melodySynth = new Tone.PolySynth(Tone.Synth, {
+                maxPolyphony: 10,
+                oscillator: { type: type },
+                envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.4 }
+            }).toDestination();
+            melodySynth.volume.value = -6;
+
+            chordSynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.8 }
+            }).toDestination();
+            chordSynth.volume.value = -13;
+        }
+
+        async function startPlayback() {
+            await Tone.start();
+            if (isPlaying) return;
+
+            initSynths();
+            isPlaying = true;
+            currentStep = 0;
+
+            const bpm = parseInt(document.getElementById('bpm-slider').value);
+            Tone.Transport.bpm.value = bpm;
+
+            const chordMuteEnabled = document.getElementById('chord-mute-toggle').checked;
+
+            Tone.Transport.scheduleRepeat((time) => {
+                if (chordMuteEnabled) {
+                    if (currentStep % STEPS_PER_CHORD === 0) {
+                        const chordIdx = Math.floor(currentStep / STEPS_PER_CHORD);
+                        const chordPitches = getChordAt(chordIdx).chordPitches;
+                        chordSynth.triggerAttackRelease(chordPitches, "2n", time);
+                    }
+                }
+
+                for (let noteIdx = 0; noteIdx < NOTE_MAPPING.length; noteIdx++) {
+                    const m = Math.floor(currentStep / STEPS_PER_MEASURE);
+                    const s = currentStep % STEPS_PER_MEASURE;
+                    const noteInfo = gridData[m][noteIdx][s];
+                    if (noteInfo && noteInfo.startStepInMeasure === s) {
+                        let dur = "8n";
+                        if (noteInfo.length === 2) dur = "4n";
+                        else if (noteInfo.length === 3) dur = "4n.";
+                        else if (noteInfo.length === 4) dur = "2n";
+                        else if (noteInfo.length >= 8) dur = "1n";
+                        else dur = `${noteInfo.length}8n`;
+
+                        melodySynth.triggerAttackRelease(NOTE_MAPPING[noteIdx].note, dur, time);
+                    }
+                }
+
+                Tone.Draw.schedule(() => {
+                    renderGridState();
+                }, time);
+
+                currentStep = (currentStep + 1) % getTotalSteps();
+            }, "8n");
+
+            Tone.Transport.start();
+            document.getElementById('play-text').textContent = '再生中...';
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            currentStep = 0;
+            renderGridState();
+            document.getElementById('play-text').textContent = '再生';
+        }
+
+        function serializeSong() {
+            const notes = [];
+            for (let m = 0; m < totalMeasures; m++) {
+                for (let n = 0; n < NOTE_MAPPING.length; n++) {
+                    for (let s = 0; s < STEPS_PER_MEASURE; s++) {
+                        const noteObj = gridData[m][n][s];
+                        if (noteObj && noteObj.startStepInMeasure === s) {
+                            notes.push([m, n, s, noteObj.length]);
+                        }
+                    }
+                }
+            }
+
+            const data = {
+                measures: totalMeasures,
+                bpm: document.getElementById('bpm-slider').value,
+                synth: document.getElementById('synth-type').value,
+                notes: notes
+            };
+
+            return btoa(JSON.stringify(data));
+        }
+
+        function deserializeSong(encodedStr) {
+            try {
+                const jsonStr = atob(encodedStr);
+                const data = JSON.parse(jsonStr);
+
+                if (data.measures && data.measures >= 4) {
+                    totalMeasures = data.measures;
+                } else {
+                    totalMeasures = 4;
+                }
+
+                if (data.bpm) {
+                    document.getElementById('bpm-slider').value = data.bpm;
+                    document.getElementById('bpm-val').textContent = data.bpm;
+                    if (Tone.Transport) Tone.Transport.bpm.value = parseInt(data.bpm);
+                }
+                if (data.synth) {
+                    document.getElementById('synth-type').value = data.synth;
+                    initSynths();
+                }
+
+                gridData = Array(totalMeasures).fill(null).map(() => 
+                    Array(NOTE_MAPPING.length).fill(null).map(() => Array(STEPS_PER_MEASURE).fill(null))
+                );
+
+                if (data.notes && Array.isArray(data.notes)) {
+                    data.notes.forEach(([m, n, s, length]) => {
+                        if (m >= 0 && m < totalMeasures && n >= 0 && n < NOTE_MAPPING.length && s >= 0 && s < STEPS_PER_MEASURE) {
+                            setNoteSpan(m, n, s, length);
+                        }
+                    });
+                }
+                updateMeasureUI();
+                return true;
+            } catch (e) {
+                console.error("Failed to load song data", e);
+                return false;
+            }
+        }
+
+        function renderSheetMusic() {
+            const canvas = document.getElementById('score-canvas');
+            const numSystems = Math.ceil(totalMeasures / 2);
+            canvas.height = Math.max(500, 120 + numSystems * 150);
+
+            document.getElementById('score-modal-subtitle').textContent = `あなたの作成した旋律の五線譜（全${totalMeasures}小節）`;
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 18px "Zen Maru Gothic", sans-serif';
+            ctx.fillText('カノンで音楽づくり - 五線譜スコア', 40, 40);
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px "Zen Maru Gothic", sans-serif';
+            ctx.fillText(`調性: ハ長調 (C Major)  |  拍子: 4/4拍子  |  全${totalMeasures}小節`, 40, 62);
+
+            const startX = 60;
+            const measureWidth = 175;
+
+            const systems = [];
+            for (let sIdx = 0; sIdx < numSystems; sIdx++) {
+                const mList = [sIdx * 2];
+                if (sIdx * 2 + 1 < totalMeasures) mList.push(sIdx * 2 + 1);
+                systems.push({ measures: mList, y: 130 + sIdx * 150 });
+            }
+
+            systems.forEach(sys => {
+                let sysX = startX;
+                const sysY = sys.y;
+
+                for (let mIdx of sys.measures) {
+                    const mX = sysX + (mIdx % 2) * (measureWidth * 2 + 30);
+                    
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 1.5;
+                    for (let l = 0; l < 5; l++) {
+                        const lineY = sysY + l * 12;
+                        ctx.beginPath();
+                        ctx.moveTo(mX, lineY);
+                        ctx.lineTo(mX + measureWidth * 2, lineY);
+                        ctx.stroke();
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(mX, sysY);
+                    ctx.lineTo(mX, sysY + 48);
+                    ctx.stroke();
+
+                    if (mIdx % 2 === 0 || mIdx === sys.measures[sys.measures.length - 1]) {
+                        ctx.beginPath();
+                        ctx.moveTo(mX + measureWidth * 2, sysY);
+                        ctx.lineTo(mX + measureWidth * 2, sysY + 48);
+                        ctx.stroke();
+                    }
+
+                    if (mIdx === sys.measures[0]) {
+                        ctx.fillStyle = '#334155';
+                        ctx.font = '36px serif';
+                        ctx.fillText('𝄞', mX + 8, sysY + 38);
+
+                        ctx.font = 'bold 12px sans-serif';
+                        ctx.fillText('4', mX + 32, sysY + 22);
+                        ctx.fillText('4', mX + 32, sysY + 40);
+                    }
+
+                    ctx.fillStyle = '#475569';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillText(`${mIdx + 1}小節目`, mX + 55, sysY - 12);
+
+                    const chord1 = getChordAt(mIdx * 2).name;
+                    const chord2 = getChordAt(mIdx * 2 + 1).name;
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillText(`[${chord1} - ${chord2}]`, mX + 110, sysY - 12);
+
+                    for (let stepInM = 0; stepInM < STEPS_PER_MEASURE; stepInM++) {
+                        const noteX = mX + 60 + (stepInM * 14);
+
+                        for (let nIdx = 0; nIdx < NOTE_MAPPING.length; nIdx++) {
+                            const noteObj = gridData[mIdx][nIdx][stepInM];
+                            if (noteObj && noteObj.startStepInMeasure === stepInM) {
+                                // 五線の各線は sysY (第5線: F5), sysY+12 (第4線: D5), sysY+24 (第3線: B4), sysY+36 (第2線: G4), sysY+48 (第1線: E4)
+                                // 1音（1度）ごとに 6px ずつ変化する
+                                const noteYOffsets = {
+                                    "E5": sysY + 6,   // 第4間 (高いミ)
+                                    "D5": sysY + 12,  // 第4線 (高いレ)
+                                    "C5": sysY + 18,  // 第3間 (高いド)
+                                    "B4": sysY + 24,  // 第3線 (シ)
+                                    "A4": sysY + 30,  // 第2間 (ラ)
+                                    "G4": sysY + 36,  // 第2線 (ソ)
+                                    "F4": sysY + 42,  // 第1間 (ファ)
+                                    "E4": sysY + 48,  // 第1線 (ミ)
+                                    "D4": sysY + 54,  // 下第1間 (レ)
+                                    "C4": sysY + 60   // 下第1加線 (ド)
+                                };
+                                const pitchName = NOTE_MAPPING[nIdx].note;
+                                const ny = noteYOffsets[pitchName] || (sysY + 24);
+
+                                ctx.fillStyle = '#1e293b';
+                                ctx.strokeStyle = '#1e293b';
+                                ctx.lineWidth = 1.5;
+
+                                ctx.beginPath();
+                                ctx.ellipse(noteX, ny, 5, 4, Math.PI / 6, 0, Math.PI * 2);
+                                
+                                if (noteObj.length >= 4) {
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.fill();
+                                    ctx.stroke();
+                                    ctx.fillStyle = '#1e293b';
+                                } else {
+                                    ctx.fill();
+                                }
+
+                                // 符幹の向き（第3線 B4: sysY + 24 より上なら下向き、以下なら上向き）
+                                ctx.beginPath();
+                                if (ny >= sysY + 24) {
+                                    ctx.moveTo(noteX + 4.5, ny);
+                                    ctx.lineTo(noteX + 4.5, ny - 24);
+                                } else {
+                                    ctx.moveTo(noteX - 4.5, ny);
+                                    ctx.lineTo(noteX - 4.5, ny + 24);
+                                }
+                                ctx.stroke();
+
+                                // 8分音符の旗
+                                if (noteObj.length === 1) {
+                                    ctx.beginPath();
+                                    if (ny >= sysY + 24) {
+                                        ctx.moveTo(noteX + 4.5, ny - 24);
+                                        ctx.quadraticCurveTo(noteX + 12, ny - 16, noteX + 8, ny - 8);
+                                    } else {
+                                        ctx.moveTo(noteX - 4.5, ny + 24);
+                                        ctx.quadraticCurveTo(noteX + 3, ny + 16, noteX - 1, ny + 8);
+                                    }
+                                    ctx.stroke();
+                                }
+
+                                // 付点（3マス: 付点四分音符、6マス: 付点二分音符）の描画
+                                if (noteObj.length === 3 || noteObj.length === 6) {
+                                    // 符頭が五線の「線」上にある場合は、線と重ならないよう少し上にずらす
+                                    const isOnLine = (ny - sysY) % 12 === 0;
+                                    const dotY = isOnLine ? ny - 3 : ny;
+                                    ctx.beginPath();
+                                    ctx.arc(noteX + 9, dotY, 2, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+
+                                // 下第1加線（ド: C4）の描画（高いレ・高いミは五線内に収まるため加線不要）
+                                if (pitchName === "C4") {
+                                    ctx.beginPath();
+                                    ctx.moveTo(noteX - 8, sysY + 60);
+                                    ctx.lineTo(noteX + 8, sysY + 60);
+                                    ctx.stroke();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function buildMeasuresHeader() {
+            const header = document.getElementById('measures-header');
+            if (!header) return;
+            header.style.gridTemplateColumns = `110px repeat(${totalMeasures}, minmax(0, 1fr))`;
+            header.innerHTML = '<div class="p-1 text-left px-2">音階 / 小節</div>';
+
+            for (let m = 0; m < totalMeasures; m++) {
+                const c1 = getChordAt(m * 2).name;
+                const c2 = getChordAt(m * 2 + 1).name;
+                const div = document.createElement('div');
+                div.className = 'border-l border-slate-200 px-1 truncate';
+                div.textContent = `${m + 1}小節目 (${c1} - ${c2})`;
+                header.appendChild(div);
+            }
+        }
+
+        function buildSubBeatHeader() {
+            const header = document.getElementById('sub-beat-header');
+            if (!header) return;
+            const totalSteps = getTotalSteps();
+            header.style.gridTemplateColumns = `110px repeat(${totalSteps}, minmax(0, 1fr))`;
+            header.innerHTML = '<div class="text-left px-2">分割 (1〜8)</div>';
+            for (let i = 0; i < totalSteps; i++) {
+                const subDiv = document.createElement('div');
+                const stepInM = (i % STEPS_PER_MEASURE) + 1;
+                subDiv.textContent = stepInM;
+                if (i % STEPS_PER_MEASURE === 0) {
+                    subDiv.classList.add('border-l-2', 'border-slate-300');
+                } else if (i % STEPS_PER_CHORD === 0) {
+                    subDiv.classList.add('border-l', 'border-slate-200');
+                }
+                header.appendChild(subDiv);
+            }
+        }
+
+        function buildGrid() {
+            const container = document.getElementById('note-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const totalSteps = getTotalSteps();
+
+            NOTE_MAPPING.forEach((noteObj, noteIdx) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'grid gap-1 items-center';
+                rowDiv.style.gridTemplateColumns = `110px repeat(${totalSteps}, minmax(0, 1fr))`;
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'text-xs font-bold text-slate-700 px-2 py-1 flex items-center justify-between bg-slate-100 rounded-lg border border-slate-200 h-9 sticky left-0 z-20';
+                labelDiv.innerHTML = `<span>${noteObj.label}</span><span class="text-[10px] text-slate-400 font-mono">${noteObj.note}</span>`;
+                rowDiv.appendChild(labelDiv);
+
+                for (let step = 0; step < totalSteps; step++) {
+                    const cell = document.createElement('div');
+                    cell.dataset.noteIdx = noteIdx;
+                    cell.dataset.step = step;
+
+                    cell.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        startDrag(noteIdx, step);
+                    });
+
+                    cell.addEventListener('mouseenter', () => {
+                        if (isMouseDown) {
+                            continueDrag(noteIdx, step);
+                        }
+                    });
+
+                    cell.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        startDrag(noteIdx, step);
+                    }, { passive: false });
+
+                    rowDiv.appendChild(cell);
+                }
+
+                container.appendChild(rowDiv);
+            });
+
+            // タブレット（タッチ操作）でのドラッグ追従処理
+            const handleTouchMove = (e) => {
+                if (!isMouseDown) return;
+                const touch = e.touches[0];
+                const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (targetEl && targetEl.dataset && targetEl.dataset.noteIdx !== undefined && targetEl.dataset.step !== undefined) {
+                    const nIdx = parseInt(targetEl.dataset.noteIdx, 10);
+                    const st = parseInt(targetEl.dataset.step, 10);
+                    continueDrag(nIdx, st);
+                }
+            };
+
+            window.addEventListener('touchmove', handleTouchMove, { passive: true });
+            window.addEventListener('mouseup', endDrag);
+            window.addEventListener('touchend', endDrag);
+            window.addEventListener('touchcancel', endDrag);
+
+            renderGridState();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        document.getElementById('play-btn').addEventListener('click', () => {
+            if (isPlaying) {
+                stopPlayback();
+            } else {
+                startPlayback();
+            }
+        });
+
+        document.getElementById('stop-btn').addEventListener('click', stopPlayback);
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (confirm("すべての音符を消去してもよろしいですか？")) {
+                gridData = Array(totalMeasures).fill(null).map(() => 
+                    Array(NOTE_MAPPING.length).fill(null).map(() => Array(STEPS_PER_MEASURE).fill(null))
+                );
+                renderGridState();
+            }
+        });
+
+        document.getElementById('add-measure-btn').addEventListener('click', () => addMeasures(4));
+        document.getElementById('remove-measure-btn').addEventListener('click', () => removeMeasures(4));
+
+        document.getElementById('bpm-slider').addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById('bpm-val').textContent = val;
+            Tone.Transport.bpm.value = parseInt(val);
+        });
+
+        document.getElementById('synth-type').addEventListener('change', initSynths);
+
+        const scoreModal = document.getElementById('score-modal');
+        document.getElementById('score-btn').addEventListener('click', () => {
+            renderSheetMusic();
+            scoreModal.classList.remove('hidden');
+        });
+
+        document.getElementById('close-score-modal').addEventListener('click', () => {
+            scoreModal.classList.add('hidden');
+        });
+
+        document.getElementById('print-score-btn').addEventListener('click', () => {
+            const canvas = document.getElementById('score-canvas');
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'waon-no-sete-score.png';
+            link.href = dataUrl;
+            link.click();
+            showToast("五線譜画像を保存しました！");
+        });
+
+        const modal = document.getElementById('share-modal');
+        document.getElementById('share-btn').addEventListener('click', () => {
+            const code = serializeSong();
+            const fullUrl = window.location.origin + window.location.pathname + '#' + code;
+            
+            document.getElementById('share-url-input').value = fullUrl;
+            document.getElementById('share-code-input').value = code;
+            modal.classList.remove('hidden');
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        document.getElementById('copy-url-btn').addEventListener('click', () => {
+            const input = document.getElementById('share-url-input');
+            input.select();
+            document.execCommand('copy');
+            showToast("共有リンクをコピーしました！");
+        });
+
+        document.getElementById('copy-code-btn').addEventListener('click', () => {
+            const input = document.getElementById('share-code-input');
+            input.select();
+            document.execCommand('copy');
+            showToast("曲データコードをコピーしました！");
+        });
+
+        document.getElementById('load-code-btn').addEventListener('click', () => {
+            const code = document.getElementById('share-code-input').value.trim();
+            if (deserializeSong(code)) {
+                modal.classList.add('hidden');
+                showToast("曲を正常に読み込みました！");
+            } else {
+                showToast("無効な曲データコードです。");
+            }
+        });
+
+        window.onload = () => {
+            updateMeasureUI();
+            initSynths();
+
+            if (window.location.hash && window.location.hash.length > 1) {
+                const hashData = window.location.hash.substring(1);
+                if (deserializeSong(hashData)) {
+                    showToast("保存された曲を読み込みました！");
+                }
+            }
+        };
+    </script>
+</body>
+</html>
